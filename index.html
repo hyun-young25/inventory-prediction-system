@@ -1,31 +1,31 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI 기반 주간 재고 진단 및 발주 리스트 생성</title>
   <style>
     * { box-sizing: border-box; }
-    :root{
-      --bg1:#eef4ff;
-      --bg2:#f7fbff;
-      --panel:#ffffffcc;
-      --line:#dbe4f0;
-      --text:#18212f;
-      --muted:#5b687a;
-      --blue:#2563eb;
-      --blue2:#1d4ed8;
-      --teal:#059669;
-      --orange:#ea580c;
-      --purple:#7c3aed;
-      --red:#dc2626;
-      --yellow:#d97706;
-      --shadow:0 14px 40px rgba(37,99,235,.10);
-      --shadow-soft:0 8px 24px rgba(15,23,42,.06);
-      --radius:20px;
+    :root {
+      --bg1: #eef4ff;
+      --bg2: #f7fbff;
+      --panel: rgba(255,255,255,0.9);
+      --line: #dbe4f0;
+      --text: #18212f;
+      --muted: #5b687a;
+      --blue: #2563eb;
+      --blue2: #1d4ed8;
+      --teal: #059669;
+      --orange: #ea580c;
+      --purple: #7c3aed;
+      --red: #dc2626;
+      --yellow: #d97706;
+      --shadow: 0 14px 40px rgba(37,99,235,.10);
+      --shadow-soft: 0 8px 24px rgba(15,23,42,.06);
+      --radius: 20px;
     }
-    *::selection{ background:#dbeafe; }
-    html{ scroll-behavior:smooth; }
+
+    html { scroll-behavior: smooth; }
     body {
       margin: 0;
       font-family: 'Pretendard Variable','Pretendard','Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',Arial,sans-serif;
@@ -35,144 +35,153 @@
         linear-gradient(180deg, var(--bg1), var(--bg2));
       color: var(--text);
     }
+
     .container {
-      width: min(1440px, 94%);
-      margin: 28px auto 40px;
+      width: min(1380px, calc(100% - 40px));
+      margin: 24px auto 40px;
     }
+
     .top-layout {
       display: grid;
-      grid-template-columns: 170px 1fr;
-      gap: 28px;
+      grid-template-columns: 160px minmax(0, 1fr);
+      gap: 24px;
       align-items: stretch;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
     }
+
     .logo-side {
-      min-height: 206px;
       display: flex;
       align-items: flex-start;
-      justify-content: flex-start;
-      padding-top: 12px;
+      justify-content: center;
+      padding-top: 10px;
     }
+
     .top-logo {
-      width: 200px;
+      width: 150px;
       max-width: 100%;
       height: auto;
       display: block;
       filter: drop-shadow(0 8px 20px rgba(29,78,216,.10));
     }
+
     .header {
       position: relative;
       overflow: hidden;
       background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 38%, #2563eb 100%);
       color: white;
-      padding: 34px 34px 30px;
-      border-radius: 28px;
+      padding: 30px 32px 28px;
+      border-radius: 26px;
       box-shadow: 0 18px 40px rgba(30,58,138,.20);
-      min-height: 206px;
       border: 1px solid rgba(255,255,255,.12);
+      min-height: 190px;
     }
+
     .header::before,
-    .header::after{
-      content:'';
-      position:absolute;
-      border-radius:999px;
-      background:rgba(255,255,255,.09);
+    .header::after {
+      content: '';
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(255,255,255,.09);
     }
-    .header::before{ width:220px; height:220px; right:-60px; top:-70px; }
-    .header::after{ width:140px; height:140px; right:120px; bottom:-50px; }
-    .header-topline{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 14px;
-      border-radius:999px;
-      background:rgba(255,255,255,.12);
+
+    .header::before { width: 220px; height: 220px; right: -60px; top: -70px; }
+    .header::after { width: 140px; height: 140px; right: 120px; bottom: -50px; }
+
+    .header-topline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
       backdrop-filter: blur(8px);
-      font-size:13px;
-      font-weight:700;
-      letter-spacing:.2px;
-      margin-bottom:16px;
-      border:1px solid rgba(255,255,255,.18);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      border: 1px solid rgba(255,255,255,.18);
+      position: relative;
+      z-index: 1;
     }
+
     .header h1 {
-      margin: 0 0 12px 0;
-      font-size: 36px;
-      line-height: 1.25;
-      letter-spacing:-.4px;
-      position:relative;
-      z-index:1;
+      margin: 0 0 12px;
+      font-size: 34px;
+      line-height: 1.28;
+      letter-spacing: -.4px;
+      position: relative;
+      z-index: 1;
     }
+
     .header p {
       margin: 0;
-      max-width: 900px;
-      font-size: 17px;
+      max-width: 880px;
+      font-size: 16px;
       line-height: 1.75;
-      opacity: 0.96;
-      position:relative;
-      z-index:1;
+      opacity: .96;
+      position: relative;
+      z-index: 1;
+      word-break: keep-all;
     }
-    .header-meta{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-top:16px;
-      position:relative;
-      z-index:1;
+
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+      position: relative;
+      z-index: 1;
     }
-    .meta-chip{
-      padding:8px 12px;
-      border-radius:999px;
-      background:rgba(255,255,255,.10);
-      border:1px solid rgba(255,255,255,.18);
-      font-size:13px;
-      font-weight:600;
+
+    .meta-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.18);
+      font-size: 13px;
+      font-weight: 600;
     }
+
     .date-box {
       margin-top: 16px;
-      font-size: 15px;
-      opacity: 0.95;
+      font-size: 14px;
+      opacity: .95;
       font-weight: 700;
-      position:relative;
-      z-index:1;
+      position: relative;
+      z-index: 1;
     }
+
     .summary-cards {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 16px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(6, minmax(0,1fr));
+      gap: 14px;
+      margin-bottom: 22px;
     }
+
     .card {
-      position:relative;
-      overflow:hidden;
-      background: linear-gradient(180deg, rgba(255,255,255,.90), rgba(255,255,255,.78));
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.80));
       backdrop-filter: blur(10px);
-      border-radius: 22px;
-      padding: 22px;
+      border-radius: 20px;
+      padding: 20px;
       box-shadow: var(--shadow-soft);
       border: 1px solid rgba(255,255,255,.65);
       transition: transform .22s ease, box-shadow .22s ease;
+      min-width: 0;
     }
-    .card::before{
-      content:'';
-      position:absolute;
-      inset:0 auto auto 0;
-      width:100%;
-      height:4px;
-      background:linear-gradient(90deg, rgba(37,99,235,.85), rgba(124,58,237,.75));
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, rgba(37,99,235,.85), rgba(124,58,237,.75));
     }
+
     .card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
-    .card-title {
-      font-size: 14px;
-      color: var(--muted);
-      margin-bottom: 10px;
-      font-weight:700;
-      letter-spacing:.1px;
-    }
-    .card-value {
-      font-size: 30px;
-      font-weight: 800;
-      letter-spacing:-.5px;
-    }
+    .card-title { font-size: 14px; color: var(--muted); margin-bottom: 10px; font-weight: 700; }
+    .card-value { font-size: 28px; font-weight: 800; letter-spacing: -.4px; }
     .danger { color: var(--red); }
     .warning { color: var(--yellow); }
     .safe { color: var(--teal); }
@@ -181,37 +190,51 @@
 
     .main-grid {
       display: grid;
-      grid-template-columns: 58% 42%;
-      gap: 24px;
+      grid-template-columns: minmax(0, 1.55fr) minmax(360px, 1fr);
+      gap: 22px;
       align-items: start;
     }
+
     .panel {
-      background: linear-gradient(180deg, rgba(255,255,255,.90), rgba(255,255,255,.82));
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.84));
       backdrop-filter: blur(12px);
-      border-radius: 26px;
-      padding: 24px;
+      border-radius: 24px;
+      padding: 22px;
       box-shadow: var(--shadow-soft);
       border: 1px solid rgba(255,255,255,.72);
+      min-width: 0;
     }
+
     .panel h2 {
-      margin-top: 0;
-      margin-bottom: 18px;
+      margin: 0 0 18px;
       font-size: 24px;
-      letter-spacing:-.25px;
+      letter-spacing: -.25px;
     }
+
+    .sticky-panel {
+      position: sticky;
+      top: 18px;
+      align-self: start;
+    }
+
     .input-grid {
       display: grid;
-      grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 1fr 1fr;
-      gap: 14px;
+      grid-template-columns: 1.2fr repeat(6, minmax(90px, 1fr));
+      gap: 12px;
       margin-bottom: 14px;
     }
+
+    .input-group { min-width: 0; }
+
     .input-group label {
       display: block;
       margin-bottom: 7px;
       font-size: 14px;
       font-weight: 700;
-      color:#334155;
+      color: #334155;
+      word-break: keep-all;
     }
+
     .input-group input,
     .input-group select {
       width: 100%;
@@ -220,17 +243,19 @@
       border-radius: 14px;
       font-size: 15px;
       background: rgba(255,255,255,.92);
-      color:#1e293b;
-      outline:none;
-      transition:border-color .18s ease, box-shadow .18s ease, transform .12s ease;
+      color: #1e293b;
+      outline: none;
+      transition: border-color .18s ease, box-shadow .18s ease;
     }
+
     .input-group input:focus,
-    .input-group select:focus{
-      border-color:#93c5fd;
-      box-shadow:0 0 0 4px rgba(147,197,253,.25);
+    .input-group select:focus {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 4px rgba(147,197,253,.25);
     }
+
     .small-note-box {
-      margin: 10px 0 14px 0;
+      margin: 10px 0 14px;
       padding: 16px 18px;
       background: linear-gradient(180deg, #f8fbff, #f2f8ff);
       border: 1px solid #dbeafe;
@@ -238,7 +263,9 @@
       font-size: 14px;
       color: #475569;
       line-height: 1.75;
+      word-break: keep-all;
     }
+
     .editing-note {
       display: none;
       margin-top: 10px;
@@ -250,23 +277,25 @@
       font-size: 14px;
       font-weight: 700;
     }
+
     .control-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      gap: 12px;
+      align-items: flex-end;
+      gap: 14px;
       margin-top: 10px;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
       flex-wrap: wrap;
     }
+
     .btn-row {
       display: flex;
       gap: 10px;
-      margin-top: 6px;
-      margin-bottom: 18px;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       align-items: center;
+      min-width: 0;
     }
+
     button {
       border: none;
       border-radius: 14px;
@@ -275,48 +304,56 @@
       cursor: pointer;
       font-weight: 800;
       white-space: nowrap;
-      flex-shrink: 0;
       transition: transform .18s ease, opacity .18s ease, box-shadow .18s ease;
       box-shadow: 0 10px 18px rgba(15,23,42,.08);
     }
+
     button:hover { transform: translateY(-2px); }
+
     .btn-add { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; }
     .btn-report { background: linear-gradient(135deg, #059669, #047857); color: white; }
     .btn-csv { background: linear-gradient(135deg, #f97316, #ea580c); color: white; }
     .btn-copy { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
     .btn-reset { background: linear-gradient(135deg, #f8fafc, #e5e7eb); color: #222; }
     .btn-sample { background: linear-gradient(135deg, #0f766e, #115e59); color: white; }
-    .btn-edit { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 8px 12px; font-size: 13px; border-radius: 10px; box-shadow:none; }
-    .delete-btn { background: linear-gradient(135deg, #f87171, #ef4444); color: white; padding: 8px 12px; font-size: 13px; border-radius: 10px; box-shadow:none; }
+    .edit-btn { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 8px 12px; font-size: 13px; border-radius: 10px; box-shadow: none; }
+    .delete-btn { background: linear-gradient(135deg, #f87171, #ef4444); color: white; padding: 8px 12px; font-size: 13px; border-radius: 10px; box-shadow: none; }
+
     .sort-box {
       display: flex;
       align-items: center;
       gap: 10px;
       font-size: 14px;
       color: #475569;
-      font-weight:700;
+      font-weight: 700;
     }
+
     .sort-box select {
       padding: 10px 12px;
       border: 1px solid #d7e0ed;
       border-radius: 12px;
       font-size: 14px;
-      background:rgba(255,255,255,.92);
+      background: rgba(255,255,255,.92);
     }
+
     .table-wrap {
+      width: 100%;
       overflow-x: auto;
+      overflow-y: hidden;
       -webkit-overflow-scrolling: touch;
       border-radius: 18px;
-      border:1px solid #e5edf7;
-      background:rgba(255,255,255,.74);
+      border: 1px solid #e5edf7;
+      background: rgba(255,255,255,.74);
       box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
     }
+
     table {
       width: 100%;
-      min-width: 1180px;
+      min-width: 1060px;
       border-collapse: collapse;
-      margin-top: 0;
+      table-layout: fixed;
     }
+
     th, td {
       border-bottom: 1px solid #edf2f7;
       padding: 13px 8px;
@@ -325,16 +362,19 @@
       vertical-align: middle;
       word-break: keep-all;
     }
+
     th {
       background: linear-gradient(180deg, #f8fbff, #eef4fb);
       font-weight: 800;
+      color: #334155;
       position: sticky;
       top: 0;
       z-index: 1;
-      color:#334155;
     }
-    tbody tr:nth-child(even){ background: rgba(248,250,252,.75); }
-    tbody tr:hover{ background:#eff6ff; }
+
+    tbody tr:nth-child(even) { background: rgba(248,250,252,.75); }
+    tbody tr:hover { background: #eff6ff; }
+
     .status-badge,
     .trend-badge {
       display: inline-flex;
@@ -346,10 +386,9 @@
       font-size: 12px;
       font-weight: 800;
       line-height: 1.2;
-      letter-spacing:.1px;
       white-space: nowrap;
-      word-break: keep-all;
     }
+
     .badge-danger { background: #fee2e2; color: #b91c1c; }
     .badge-warning { background: #fef3c7; color: #92400e; }
     .badge-safe { background: #d1fae5; color: #065f46; }
@@ -358,7 +397,9 @@
     .trend-flat { background: #e2e8f0; color: #475569; }
 
     .report-box {
-      min-height: 300px;
+      min-height: 310px;
+      max-height: 420px;
+      overflow-y: auto;
       background: linear-gradient(180deg, #fcfdff, #f7faff);
       border: 1px solid #dbe7f3;
       border-radius: 18px;
@@ -367,30 +408,27 @@
       white-space: pre-line;
       font-size: 15px;
       margin-bottom: 16px;
-      color:#243244;
+      color: #243244;
     }
+
     .chart-box {
       background: linear-gradient(180deg, #fcfdff, #f7fbff);
       border: 1px solid #e0eaf5;
       border-radius: 18px;
       padding: 18px;
     }
+
     .chart-title {
       font-size: 16px;
       font-weight: 800;
       margin-bottom: 14px;
       color: #334155;
     }
-    .chart-empty {
-      color: #777;
-      font-size: 14px;
-    }
-    .chart-item {
-      margin-bottom: 18px;
-      padding-bottom: 16px;
-      border-bottom:1px dashed #e6edf6;
-    }
-    .chart-item:last-child { margin-bottom: 0; padding-bottom:0; border-bottom:none; }
+
+    .chart-empty { color: #777; font-size: 14px; }
+    .chart-item { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px dashed #e6edf6; }
+    .chart-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+
     .chart-label-row {
       display: flex;
       justify-content: space-between;
@@ -398,8 +436,9 @@
       margin-bottom: 8px;
       font-size: 13px;
       color: #475569;
-      font-weight:700;
+      font-weight: 700;
     }
+
     .chart-label-name {
       font-weight: 800;
       color: #1e293b;
@@ -407,16 +446,19 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+
     .chart-bar-group { display: grid; gap: 7px; }
+
     .bar-row {
       display: grid;
       grid-template-columns: 80px 1fr 50px;
       align-items: center;
       gap: 8px;
       font-size: 12px;
-      color:#475569;
-      font-weight:700;
+      color: #475569;
+      font-weight: 700;
     }
+
     .bar-track {
       width: 100%;
       height: 12px;
@@ -425,264 +467,76 @@
       overflow: hidden;
       box-shadow: inset 0 1px 2px rgba(15,23,42,.05);
     }
+
     .bar-fill { height: 100%; border-radius: 999px; }
     .bar-predicted { background: linear-gradient(90deg, #60a5fa, #2563eb); }
     .bar-stock { background: linear-gradient(90deg, #34d399, #059669); }
     .bar-order { background: linear-gradient(90deg, #fb923c, #ea580c); }
 
-    .footer-note{
-      margin-top:18px;
-      color:#64748b;
-      font-size:13px;
-      text-align:right;
-      font-weight:600;
+    .footer-note {
+      margin-top: 18px;
+      color: #64748b;
+      font-size: 13px;
+      text-align: right;
+      font-weight: 600;
     }
+
     .empty-text { color: #777; }
-
-
-    .table-wrap {
-      width: 100%;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      border-radius: 14px;
-    }
-
-    th, td {
-      word-break: keep-all;
-    }
-
-    .status-badge {
+    .mobile-card-label { display: none; }
+    .cell-value {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      min-width: 92px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 700;
-      white-space: nowrap;
-      word-break: keep-all;
-      line-height: 1.2;
+      gap: 6px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
     }
 
-    .mobile-card-label {
-      display: none;
-    }
-
-
-    @media (max-width: 1450px) {
-      .btn-row { flex-wrap: wrap; }
-    }
-    @media (max-width: 1300px) {
-      .summary-cards { grid-template-columns: repeat(3, 1fr); }
-      .input-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 900px) {
+    @media (max-width: 1280px) {
+      .summary-cards { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .input-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
       .main-grid { grid-template-columns: 1fr; }
-      .top-layout { grid-template-columns: 1fr; }
-      .logo-side {
-        justify-content: flex-start;
-        padding-left: 10px;
-        min-height: auto;
-      }
-      .header { min-height: auto; }
+      .sticky-panel { position: static; }
+      .report-box { max-height: none; }
     }
-    @media (max-width: 768px) {
-      .container {
-        width: min(100%, calc(100% - 20px));
-        margin: 12px auto 24px;
-      }
-      .top-layout { gap: 14px; margin-bottom: 16px; }
-      .logo-side {
-        justify-content: center;
-        padding-top: 0;
-        padding-left: 0;
-      }
-      .top-logo { width: 132px; }
-      .header {
-        padding: 22px 18px 20px;
-        border-radius: 20px;
-      }
-      .header-topline {
-        font-size: 12px;
-        padding: 7px 11px;
-        margin-bottom: 12px;
-      }
-      .header h1 {
-        font-size: 23px;
-        line-height: 1.35;
-      }
-      .header p, .date-box {
-        font-size: 14px;
-        line-height: 1.65;
-      }
-      .header-meta { gap: 8px; }
-      .meta-chip {
-        font-size: 12px;
-        padding: 7px 10px;
-      }
-      .summary-cards { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+    @media (max-width: 900px) {
+      .container { width: min(100%, calc(100% - 24px)); margin: 12px auto 24px; }
+      .top-layout { grid-template-columns: 1fr; gap: 14px; }
+      .logo-side { justify-content: center; padding-top: 0; }
+      .top-logo { width: 130px; }
+      .header { min-height: auto; padding: 22px 18px 20px; border-radius: 20px; }
+      .header h1 { font-size: 24px; line-height: 1.38; }
+      .header p, .date-box { font-size: 14px; line-height: 1.65; }
+      .summary-cards { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
       .card { padding: 16px; border-radius: 18px; }
-      .card-title { font-size: 13px; }
       .card-value { font-size: 22px; }
-      .panel {
-        padding: 16px;
-        border-radius: 18px;
-      }
+      .panel { padding: 16px; border-radius: 18px; }
       .panel h2 { font-size: 19px; }
-      .input-grid { grid-template-columns: 1fr; }
-      .btn-row {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-      }
-      .btn-row button {
-        width: 100%;
-        min-width: 0;
-        padding: 13px 12px;
-        font-size: 14px;
-      }
-      .sort-box {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .sort-box select { width: 100%; }
-      .table-wrap { border-radius: 14px; }
-      table { min-width: 900px; }
-      th, td {
-        font-size: 13px;
-        padding: 11px 7px;
-      }
-      .status-badge,
-      .trend-badge {
-        min-width: 84px;
-        font-size: 11px;
-        padding: 7px 10px;
-      }
-      .chart-box,
-      .report-box { border-radius: 16px; }
-      .bar-row { grid-template-columns: 58px 1fr 36px; gap: 6px; }
-      .chart-label-row { font-size: 12px; }
-      .footer-note {
-        text-align: left;
-        font-size: 12px;
-      }
+      .input-grid { grid-template-columns: 1fr; gap: 10px; }
+      .btn-row { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); width: 100%; }
+      .btn-row button { width: 100%; min-width: 0; padding: 13px 12px; font-size: 14px; }
+      .sort-box { width: 100%; justify-content: space-between; }
+      .sort-box select { min-width: 160px; }
     }
-    @media (max-width: 480px) {
-      .container {
-        width: min(100%, calc(100% - 14px));
-        margin: 8px auto 18px;
-      }
+
+    @media (max-width: 768px) {
+      .container { width: min(100%, calc(100% - 16px)); margin: 8px auto 18px; }
+      .header-topline { font-size: 12px; padding: 7px 11px; margin-bottom: 12px; }
+      .header h1 { font-size: 22px; }
       .summary-cards { grid-template-columns: 1fr 1fr; gap: 10px; }
       .card { padding: 14px; }
+      .card-title { font-size: 13px; margin-bottom: 8px; }
       .card-value { font-size: 20px; }
-      .header h1 { font-size: 21px; }
       .btn-row { grid-template-columns: 1fr; }
-      .panel { padding: 14px; }
-      table { min-width: 860px; }
-    }
-
-    @media (max-width: 768px) {
-      .container {
-        width: 100%;
-        padding: 12px;
-        margin: 0 auto;
-      }
-
-      .top-layout {
-        gap: 14px;
-        margin-bottom: 16px;
-      }
-
-      .logo-side {
-        padding-left: 0;
-        justify-content: center;
-      }
-
-      .top-logo {
-        width: 150px;
-        margin-left: 0;
-      }
-
-      .header {
-        padding: 22px 18px;
-        border-radius: 16px;
-      }
-
-      .header h1 {
-        font-size: 24px;
-        line-height: 1.4;
-        word-break: keep-all;
-      }
-
-      .header p,
-      .date-box {
-        font-size: 14px;
-        line-height: 1.7;
-        word-break: keep-all;
-      }
-
-      .summary-cards {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        margin-bottom: 16px;
-      }
-
-      .card {
-        padding: 16px;
-        border-radius: 14px;
-      }
-
-      .card-title {
-        font-size: 13px;
-        margin-bottom: 8px;
-      }
-
-      .card-value {
-        font-size: 24px;
-      }
-
-      .panel {
-        padding: 16px;
-        border-radius: 14px;
-      }
-
-      .panel h2 {
-        font-size: 18px;
-        margin-bottom: 14px;
-      }
-
-      .input-grid {
-        gap: 10px;
-      }
-
-      .input-group label {
-        font-size: 14px;
-      }
-
-      .input-group input,
-      .input-group select {
-        padding: 12px;
-        font-size: 16px;
-      }
-
-      .small-note-box,
-      .report-box {
-        font-size: 14px;
-      }
-
-      .btn-row {
-        gap: 8px;
-      }
-
-      button {
-        width: 100%;
-        padding: 13px 14px;
-        font-size: 15px;
-      }
+      .control-row { align-items: stretch; }
+      .sort-box { flex-direction: column; align-items: flex-start; }
+      .sort-box select { width: 100%; }
 
       .table-wrap {
         overflow-x: visible;
+        border: none;
+        background: transparent;
+        box-shadow: none;
       }
 
       .table-wrap table,
@@ -695,13 +549,9 @@
         width: 100%;
       }
 
-      .table-wrap thead {
-        display: none;
-      }
-
-      .table-wrap tbody {
-        display: block;
-      }
+      .table-wrap table { min-width: 0; }
+      .table-wrap thead { display: none; }
+      .table-wrap tbody { display: block; }
 
       .table-wrap tr {
         background: #ffffff;
@@ -724,11 +574,7 @@
         gap: 12px;
       }
 
-      .table-wrap td:last-child {
-        border-bottom: none;
-        padding-bottom: 0;
-      }
-
+      .table-wrap td:last-child { border-bottom: none; padding-bottom: 0; }
       .mobile-card-label {
         display: inline-block;
         min-width: 92px;
@@ -743,150 +589,20 @@
         word-break: keep-all;
       }
 
-      .table-wrap td .delete-btn,
-      .table-wrap td .edit-btn {
-        width: auto;
-      }
+      .status-badge,
+      .trend-badge { min-width: 84px; font-size: 11px; padding: 7px 10px; }
+      .report-box, .chart-box { border-radius: 16px; }
+      .bar-row { grid-template-columns: 58px 1fr 36px; gap: 6px; }
+      .chart-label-row { font-size: 12px; }
+      .footer-note { text-align: left; font-size: 12px; }
     }
-
-  
-    @media (min-width: 1201px) {
-      .main-grid {
-        grid-template-columns: 57% 43%;
-        align-items: stretch;
-        gap: 22px;
-      }
-
-      .main-grid > .panel:first-child,
-      .main-grid > .panel:last-child {
-        min-width: 0;
-        max-width: none;
-      }
-
-      .main-grid > .panel:last-child {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .main-grid > .panel:last-child .report-box {
-        min-height: 310px;
-      }
-
-      .summary-cards {
-        grid-template-columns: repeat(6, minmax(0, 1fr));
-      }
-
-      .btn-row {
-        justify-content: flex-start;
-      }
-    }
-
-
-    .table-wrap {
-      overflow-x: auto;
-      overflow-y: hidden;
-      scrollbar-gutter: stable;
-    }
-
-    .table-wrap table {
-      table-layout: auto;
-    }
-
-    @media (min-width: 1201px) {
-      .table-wrap {
-        width: 100%;
-      }
-
-      th, td {
-        padding: 12px 6px;
-        font-size: 13px;
-      }
-
-      .delete-btn, .edit-btn {
-        padding: 8px 10px;
-      }
-    }
-
-
-    .main-grid > .panel:last-child {
-        position: sticky;
-        top: 20px;
-        align-self: start;
-      }
-
-      .main-grid > .panel:last-child .report-box {
-        min-height: 320px;
-        max-height: 420px;
-        overflow-y: auto;
-      }
-    }
-
-
-    .cell-value {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-    }
-
-
-    @media (max-width: 900px) {
-      .main-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .summary-cards {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .top-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .input-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (min-width: 901px) {
-      .container {
-        width: min(1480px, 94vw);
-      }
-
-      .main-grid {
-        display: grid;
-        grid-template-columns: 58% 42%;
-        gap: 24px;
-        align-items: start;
-      }
-
-      .main-grid > .panel:first-child,
-      .main-grid > .panel:last-child {
-        min-width: 0;
-        max-width: none;
-      }
-
-      .main-grid > .panel:last-child {
-        position: sticky;
-        top: 18px;
-        align-self: start;
-      }
-
-      .main-grid > .panel:last-child .report-box {
-        min-height: 280px;
-        max-height: 340px;
-        overflow-y: auto;
-      }
-    }
-
-</style>
+  </style>
 </head>
 <body>
   <div class="container">
     <div class="top-layout">
       <div class="logo-side">
-        <img src="LOGO3.png" alt="호서대학교 로고" class="top-logo">
+        <img src="LOGO3.png" alt="호서대학교 로고" class="top-logo" />
       </div>
 
       <div class="header">
@@ -907,30 +623,12 @@
     </div>
 
     <div class="summary-cards">
-      <div class="card">
-        <div class="card-title">등록 상품 수</div>
-        <div class="card-value" id="totalCount">0</div>
-      </div>
-      <div class="card">
-        <div class="card-title">발주 필요</div>
-        <div class="card-value danger" id="dangerCount">0</div>
-      </div>
-      <div class="card">
-        <div class="card-title">발주 검토</div>
-        <div class="card-value warning" id="warningCount">0</div>
-      </div>
-      <div class="card">
-        <div class="card-title">재고 안정</div>
-        <div class="card-value safe" id="safeCount">0</div>
-      </div>
-      <div class="card">
-        <div class="card-title">발주 대상 상품 수</div>
-        <div class="card-value blue" id="orderTargetCount">0</div>
-      </div>
-      <div class="card">
-        <div class="card-title">총 권장 발주 수량</div>
-        <div class="card-value purple" id="totalRecommendedOrder">0</div>
-      </div>
+      <div class="card"><div class="card-title">등록 상품 수</div><div class="card-value" id="totalCount">0</div></div>
+      <div class="card"><div class="card-title">발주 필요</div><div class="card-value danger" id="dangerCount">0</div></div>
+      <div class="card"><div class="card-title">발주 검토</div><div class="card-value warning" id="warningCount">0</div></div>
+      <div class="card"><div class="card-title">재고 안정</div><div class="card-value safe" id="safeCount">0</div></div>
+      <div class="card"><div class="card-title">발주 대상 상품 수</div><div class="card-value blue" id="orderTargetCount">0</div></div>
+      <div class="card"><div class="card-title">총 권장 발주 수량</div><div class="card-value purple" id="totalRecommendedOrder">0</div></div>
     </div>
 
     <div class="main-grid">
@@ -940,43 +638,37 @@
         <div class="input-grid">
           <div class="input-group">
             <label for="productName">상품명</label>
-            <input type="text" id="productName" placeholder="예: 생수 2L">
+            <input type="text" id="productName" placeholder="예: 생수 2L" />
           </div>
-
           <div class="input-group">
             <label for="week1">3주 전 판매량</label>
-            <input type="number" id="week1" placeholder="예: 30">
+            <input type="number" id="week1" placeholder="예: 30" />
           </div>
-
           <div class="input-group">
             <label for="week2">2주 전 판매량</label>
-            <input type="number" id="week2" placeholder="예: 35">
+            <input type="number" id="week2" placeholder="예: 35" />
           </div>
-
           <div class="input-group">
             <label for="week3">1주 전 판매량</label>
-            <input type="number" id="week3" placeholder="예: 40">
+            <input type="number" id="week3" placeholder="예: 40" />
           </div>
-
           <div class="input-group">
             <label for="currentStock">현재 재고량</label>
-            <input type="number" id="currentStock" placeholder="예: 12">
+            <input type="number" id="currentStock" placeholder="예: 12" />
           </div>
-
           <div class="input-group">
             <label for="safetyStock">안전재고</label>
-            <input type="number" id="safetyStock" placeholder="예: 5" value="5">
+            <input type="number" id="safetyStock" placeholder="예: 5" value="5" />
           </div>
-
           <div class="input-group">
             <label for="leadTime">입고 소요일수</label>
-            <input type="number" id="leadTime" placeholder="예: 3" value="3">
+            <input type="number" id="leadTime" placeholder="예: 3" value="3" />
           </div>
         </div>
 
         <div class="small-note-box">
-          예상 판매량은 최근 데이터에 더 높은 가중치를 주는 방식으로 계산한다.<br>
-          계산식: 3주 전 20% + 2주 전 30% + 1주 전 50%<br>
+          예상 판매량은 최근 데이터에 더 높은 가중치를 주는 방식으로 계산한다.<br />
+          계산식: 3주 전 20% + 2주 전 30% + 1주 전 50%<br />
           이후 추세, 안전재고, 입고 소요일수를 함께 고려하여 진단 결과와 권장 발주 수량을 산출한다.
         </div>
 
@@ -1004,7 +696,8 @@
           </div>
         </div>
 
-        <div class="table-wrap"><table>
+        <div class="table-wrap">
+          <table>
             <thead>
               <tr>
                 <th>우선순위</th>
@@ -1024,11 +717,11 @@
                 <td colspan="10" class="empty-text">아직 등록된 상품이 없습니다.</td>
               </tr>
             </tbody>
-          </table></div>
+          </table>
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel sticky-panel">
         <h2>AI 분석 결과</h2>
         <div class="report-box" id="reportBox">아직 보고서가 생성되지 않았습니다.</div>
 
@@ -1038,6 +731,7 @@
         </div>
       </div>
     </div>
+
     <div class="footer-note">발표 팁: 예시 데이터 → AI 보고서 생성 순서로 시연하면 기능 흐름이 깔끔하게 보인다.</div>
   </div>
 
@@ -1059,12 +753,8 @@
     }
 
     function getTrendInfo(w1, w2, w3) {
-      if (w1 < w2 && w2 < w3) {
-        return { trendText: '상승 추세', trendClass: 'trend-up', trendScore: 1 };
-      }
-      if (w1 > w2 && w2 > w3) {
-        return { trendText: '감소 추세', trendClass: 'trend-down', trendScore: -1 };
-      }
+      if (w1 < w2 && w2 < w3) return { trendText: '상승 추세', trendClass: 'trend-up', trendScore: 1 };
+      if (w1 > w2 && w2 > w3) return { trendText: '감소 추세', trendClass: 'trend-down', trendScore: -1 };
       return { trendText: '보합 추세', trendClass: 'trend-flat', trendScore: 0 };
     }
 
@@ -1096,8 +786,7 @@
         priorityScore = 1;
       }
 
-      recommendedOrder = Math.max(recommendedOrder, 0);
-      return { status, badge, recommendedOrder, priorityScore, targetStock };
+      return { status, badge, recommendedOrder: Math.max(recommendedOrder, 0), priorityScore, targetStock };
     }
 
     function buildProductData(productName, w1, w2, w3, currentStock, safetyStock, leadTime) {
@@ -1129,29 +818,13 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     }
 
-    function loadFromLocalStorage() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return;
-
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          products = parsed;
-        }
-      } catch (error) {
-        console.error('저장 데이터 불러오기 실패:', error);
-      }
-    }
-
     function sortProducts() {
       const sortOption = document.getElementById('sortOption').value;
-
       products.sort((a, b) => {
         if (sortOption === 'name') return a.productName.localeCompare(b.productName, 'ko');
         if (sortOption === 'predicted') return b.predictedSales - a.predictedSales;
         if (sortOption === 'stock') return b.currentStock - a.currentStock;
         if (sortOption === 'order') return b.recommendedOrder - a.recommendedOrder;
-
         if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
         if (b.recommendedOrder !== a.recommendedOrder) return b.recommendedOrder - a.recommendedOrder;
         return a.productName.localeCompare(b.productName, 'ko');
@@ -1187,12 +860,10 @@
         alert('상품명, 최근 3주 판매량, 현재 재고량, 안전재고, 입고 소요일수를 모두 입력하세요.');
         return null;
       }
-
       if ([week1, week2, week3, currentStock, safetyStock, leadTime].some(v => v < 0)) {
         alert('모든 수치는 0 이상이어야 합니다.');
         return null;
       }
-
       return { productName, week1, week2, week3, currentStock, safetyStock, leadTime };
     }
 
@@ -1202,19 +873,14 @@
 
       const { productName, week1, week2, week3, currentStock, safetyStock, leadTime } = values;
       const duplicateIndex = products.findIndex((item, index) => item.productName === productName && index !== editingIndex);
-
       if (duplicateIndex !== -1) {
         alert('이미 등록된 상품명입니다. 같은 상품은 수정 기능을 사용하세요.');
         return;
       }
 
       const productData = buildProductData(productName, week1, week2, week3, currentStock, safetyStock, leadTime);
-
-      if (editingIndex === null) {
-        products.push(productData);
-      } else {
-        products[editingIndex] = productData;
-      }
+      if (editingIndex === null) products.push(productData);
+      else products[editingIndex] = productData;
 
       saveToLocalStorage();
       exitEditMode();
@@ -1222,22 +888,14 @@
       applySortAndRender();
     }
 
-    
-    function resetTableScroll() {
-      const wrap = document.querySelector('.table-wrap');
-      if (wrap) wrap.scrollLeft = 0;
-    }
-
     function renderTable() {
-      const table = document.getElementById("productTable");
-
+      const table = document.getElementById('productTable');
       if (products.length === 0) {
         table.innerHTML = `<tr><td colspan="10" class="empty-text">아직 등록된 상품이 없습니다.</td></tr>`;
         return;
       }
 
-      table.innerHTML = "";
-
+      table.innerHTML = '';
       products.forEach((item, index) => {
         table.innerHTML += `
           <tr>
@@ -1245,7 +903,7 @@
             <td><span class="mobile-card-label">상품명</span><span class="cell-value">${item.productName}</span></td>
             <td><span class="mobile-card-label">예상 판매량</span><span class="cell-value">${item.predictedSales}</span></td>
             <td><span class="mobile-card-label">현재 재고</span><span class="cell-value">${item.currentStock}</span></td>
-            <td><span class="mobile-card-label">추세</span><span class="cell-value">${item.trendText || '-'}</span></td>
+            <td><span class="mobile-card-label">추세</span><span class="cell-value">${item.trendText}</span></td>
             <td><span class="mobile-card-label">진단 결과</span><span class="cell-value"><span class="status-badge ${item.badge}">${item.status}</span></span></td>
             <td><span class="mobile-card-label">안전재고</span><span class="cell-value">${item.safetyStock}</span></td>
             <td><span class="mobile-card-label">입고일수</span><span class="cell-value">${item.leadTime}</span></td>
@@ -1257,16 +915,13 @@
                 <button class="delete-btn" onclick="deleteProduct(${index})">삭제</button>
               </span>
             </td>
-          </tr>
-        `;
+          </tr>`;
       });
-      resetTableScroll();
     }
 
     function editProduct(index) {
       const item = products[index];
       if (!item) return;
-
       document.getElementById('productName').value = item.productName;
       document.getElementById('week1').value = item.week1;
       document.getElementById('week2').value = item.week2;
@@ -1274,7 +929,6 @@
       document.getElementById('currentStock').value = item.currentStock;
       document.getElementById('safetyStock').value = item.safetyStock;
       document.getElementById('leadTime').value = item.leadTime;
-
       editingIndex = index;
       document.getElementById('saveBtn').innerText = '수정 저장';
       document.getElementById('editingNote').style.display = 'block';
@@ -1293,19 +947,12 @@
     }
 
     function updateSummary() {
-      const total = products.length;
-      const danger = products.filter(item => item.status === '발주 필요').length;
-      const warning = products.filter(item => item.status === '발주 검토').length;
-      const safe = products.filter(item => item.status === '재고 안정').length;
-      const orderTargetCount = products.filter(item => item.recommendedOrder > 0).length;
-      const totalRecommendedOrder = products.reduce((sum, item) => sum + item.recommendedOrder, 0);
-
-      document.getElementById('totalCount').innerText = total;
-      document.getElementById('dangerCount').innerText = danger;
-      document.getElementById('warningCount').innerText = warning;
-      document.getElementById('safeCount').innerText = safe;
-      document.getElementById('orderTargetCount').innerText = orderTargetCount;
-      document.getElementById('totalRecommendedOrder').innerText = totalRecommendedOrder;
+      document.getElementById('totalCount').innerText = products.length;
+      document.getElementById('dangerCount').innerText = products.filter(item => item.status === '발주 필요').length;
+      document.getElementById('warningCount').innerText = products.filter(item => item.status === '발주 검토').length;
+      document.getElementById('safeCount').innerText = products.filter(item => item.status === '재고 안정').length;
+      document.getElementById('orderTargetCount').innerText = products.filter(item => item.recommendedOrder > 0).length;
+      document.getElementById('totalRecommendedOrder').innerText = products.reduce((sum, item) => sum + item.recommendedOrder, 0);
     }
 
     function generateReport() {
@@ -1325,7 +972,7 @@
       report += `총 ${products.length}개 상품을 분석한 결과, 발주 필요 ${dangerItems.length}개, 발주 검토 ${warningItems.length}개, 재고 안정 ${safeItems.length}개로 확인되었다. 전체 권장 발주 수량은 ${totalOrder}개이다.\n\n`;
       report += '이번 분석은 최근 3주 판매량에 가중치를 두어 예상 판매량을 계산하고, 판매 추세·안전재고·입고 소요일수를 함께 고려하여 산출하였다.\n\n';
 
-      if (dangerItems.length > 0) {
+      if (dangerItems.length) {
         report += '[즉시 발주 권장 상품]\n';
         dangerItems.forEach((item, idx) => {
           let reason = `${item.trendText}`;
@@ -1335,7 +982,7 @@
         report += '\n';
       }
 
-      if (warningItems.length > 0) {
+      if (warningItems.length) {
         report += '[발주 검토 상품]\n';
         warningItems.forEach((item, idx) => {
           report += `${idx + 1}. ${item.productName}: 예상 판매량 ${item.predictedSales}개 대비 현재 재고 ${item.currentStock}개로 안전재고 ${item.safetyStock}개를 충족하지 못할 가능성이 있다. ${item.trendText} 흐름을 참고하여 ${item.recommendedOrder}개 발주 여부를 검토할 필요가 있다.\n`;
@@ -1343,7 +990,7 @@
         report += '\n';
       }
 
-      if (safeItems.length > 0) {
+      if (safeItems.length) {
         report += '[재고 안정 상품]\n';
         safeItems.forEach((item, idx) => {
           report += `${idx + 1}. ${item.productName}: 예상 판매량 ${item.predictedSales}개 대비 현재 재고 ${item.currentStock}개로 비교적 안정적인 상태이다. 현재는 추가 발주 없이 모니터링 중심 관리가 적절하다.\n`;
@@ -1352,7 +999,7 @@
       }
 
       report += '[최종 발주안]\n';
-      if (orderItems.length > 0) {
+      if (orderItems.length) {
         orderItems.forEach((item, idx) => {
           const orderText = item.status === '발주 필요' ? '즉시 발주 권장' : '추가 확인 후 발주';
           report += `${idx + 1}. ${item.productName}: ${item.recommendedOrder}개 (${orderText})\n`;
@@ -1366,7 +1013,7 @@
 
     function downloadCSV() {
       const orderItems = products.filter(item => item.recommendedOrder > 0);
-      if (orderItems.length === 0) {
+      if (!orderItems.length) {
         alert('다운로드할 발주 대상 상품이 없습니다.');
         return;
       }
@@ -1393,7 +1040,6 @@
         alert('먼저 보고서를 생성하세요.');
         return;
       }
-
       navigator.clipboard.writeText(reportText)
         .then(() => alert('보고서가 복사되었습니다.'))
         .catch(() => alert('복사에 실패했습니다. 브라우저 권한을 확인하세요.'));
@@ -1401,7 +1047,7 @@
 
     function renderChart() {
       const chartArea = document.getElementById('chartArea');
-      if (products.length === 0) {
+      if (!products.length) {
         chartArea.className = 'chart-empty';
         chartArea.innerText = '상품을 등록하면 예상 판매량, 현재 재고, 권장 발주 수량이 표시됩니다.';
         return;
@@ -1409,7 +1055,6 @@
 
       const maxValue = Math.max(...products.flatMap(item => [item.predictedSales, item.currentStock, item.recommendedOrder, item.targetStock]), 1);
       const topItems = [...products].slice(0, 6);
-
       chartArea.className = '';
       chartArea.innerHTML = topItems.map(item => `
         <div class="chart-item">
@@ -1434,8 +1079,7 @@
               <div>${item.recommendedOrder}</div>
             </div>
           </div>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
 
     function resetAll() {
@@ -1449,13 +1093,12 @@
     }
 
     function loadSampleData() {
-      const sampleProducts = [
+      products = [
         buildProductData('생수 2L', 30, 35, 40, 12, 5, 3),
         buildProductData('컵라면', 18, 16, 14, 25, 5, 2),
         buildProductData('과자 묶음', 22, 28, 34, 10, 7, 5),
         buildProductData('캔커피', 14, 15, 15, 17, 4, 6)
       ];
-      products = sampleProducts;
       saveToLocalStorage();
       exitEditMode();
       clearInputs();
@@ -1471,12 +1114,23 @@
       saveToLocalStorage();
     }
 
+    function loadFromLocalStorage() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) products = parsed;
+      } catch (error) {
+        console.error('저장 데이터 불러오기 실패:', error);
+      }
+    }
+
     setTodayDate();
-    products = [];
+    loadFromLocalStorage();
     renderTable();
     updateSummary();
     renderChart();
-    document.getElementById('reportBox').innerText = '아직 보고서가 생성되지 않았습니다.';
+    document.getElementById('reportBox').innerText = products.length ? '저장된 상품 데이터가 불러와졌습니다. AI 보고서를 생성해 보세요.' : '아직 보고서가 생성되지 않았습니다.';
   </script>
 </body>
 </html>
