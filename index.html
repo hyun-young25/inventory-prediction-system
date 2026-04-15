@@ -5,350 +5,903 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI 기반 주간 재고 진단 및 발주 리스트 생성</title>
   <style>
-    * {
-      box-sizing: border-box;
+    * { box-sizing: border-box; }
+    :root{
+      --bg1:#eef4ff;
+      --bg2:#f7fbff;
+      --panel:#ffffffcc;
+      --line:#dbe4f0;
+      --text:#18212f;
+      --muted:#5b687a;
+      --blue:#2563eb;
+      --blue2:#1d4ed8;
+      --teal:#059669;
+      --orange:#ea580c;
+      --purple:#7c3aed;
+      --red:#dc2626;
+      --yellow:#d97706;
+      --shadow:0 14px 40px rgba(37,99,235,.10);
+      --shadow-soft:0 8px 24px rgba(15,23,42,.06);
+      --radius:20px;
     }
-
+    *::selection{ background:#dbeafe; }
+    html{ scroll-behavior:smooth; }
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      color: #222;
+      font-family: 'Pretendard Variable','Pretendard','Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',Arial,sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, #dbeafe 0, transparent 24%),
+        radial-gradient(circle at 90% 12%, #e9d5ff 0, transparent 18%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      color: var(--text);
     }
-
     .container {
-      width: 1400px;
-      margin: 20px auto;
+      width: min(1440px, 94%);
+      margin: 28px auto 40px;
     }
-
     .top-layout {
       display: grid;
-      grid-template-columns: 180px 1fr;
+      grid-template-columns: 170px 1fr;
       gap: 28px;
-      align-items: start;
+      align-items: stretch;
       margin-bottom: 24px;
     }
-
     .logo-side {
-      min-height: 180px;
+      min-height: 206px;
       display: flex;
       align-items: flex-start;
       justify-content: flex-start;
-      padding-top: 18px;
-      padding-left: 0;
+      padding-top: 12px;
     }
-
     .top-logo {
-      width: 210px;
+      width: 200px;
+      max-width: 100%;
       height: auto;
       display: block;
-      margin-left: -10px;
+      filter: drop-shadow(0 8px 20px rgba(29,78,216,.10));
     }
-
     .header {
-      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 38%, #2563eb 100%);
       color: white;
-      padding: 34px 32px 30px 32px;
-      border-radius: 18px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-      min-height: 180px;
+      padding: 34px 34px 30px;
+      border-radius: 28px;
+      box-shadow: 0 18px 40px rgba(30,58,138,.20);
+      min-height: 206px;
+      border: 1px solid rgba(255,255,255,.12);
     }
-
+    .header::before,
+    .header::after{
+      content:'';
+      position:absolute;
+      border-radius:999px;
+      background:rgba(255,255,255,.09);
+    }
+    .header::before{ width:220px; height:220px; right:-60px; top:-70px; }
+    .header::after{ width:140px; height:140px; right:120px; bottom:-50px; }
+    .header-topline{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      backdrop-filter: blur(8px);
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:.2px;
+      margin-bottom:16px;
+      border:1px solid rgba(255,255,255,.18);
+    }
     .header h1 {
       margin: 0 0 12px 0;
-      font-size: 34px;
-      line-height: 1.3;
+      font-size: 36px;
+      line-height: 1.25;
+      letter-spacing:-.4px;
+      position:relative;
+      z-index:1;
     }
-
     .header p {
       margin: 0;
-      font-size: 18px;
-      line-height: 1.7;
+      max-width: 900px;
+      font-size: 17px;
+      line-height: 1.75;
       opacity: 0.96;
+      position:relative;
+      z-index:1;
     }
-
+    .header-meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:16px;
+      position:relative;
+      z-index:1;
+    }
+    .meta-chip{
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.18);
+      font-size:13px;
+      font-weight:600;
+    }
     .date-box {
       margin-top: 16px;
-      font-size: 18px;
+      font-size: 15px;
       opacity: 0.95;
-      font-weight: bold;
+      font-weight: 700;
+      position:relative;
+      z-index:1;
     }
-
     .summary-cards {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 16px;
       margin-bottom: 24px;
     }
-
     .card {
-      background: white;
-      border-radius: 14px;
+      position:relative;
+      overflow:hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,.90), rgba(255,255,255,.78));
+      backdrop-filter: blur(10px);
+      border-radius: 22px;
       padding: 22px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-      border: 1px solid #e5e7eb;
-      transition: 0.2s;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(255,255,255,.65);
+      transition: transform .22s ease, box-shadow .22s ease;
     }
-
-    .card:hover {
-      transform: translateY(-4px);
+    .card::before{
+      content:'';
+      position:absolute;
+      inset:0 auto auto 0;
+      width:100%;
+      height:4px;
+      background:linear-gradient(90deg, rgba(37,99,235,.85), rgba(124,58,237,.75));
     }
-
+    .card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
     .card-title {
-      font-size: 15px;
-      color: #666;
-      margin-bottom: 12px;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-weight:700;
+      letter-spacing:.1px;
     }
-
     .card-value {
-      font-size: 34px;
-      font-weight: bold;
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing:-.5px;
     }
-
-    .danger { color: #dc2626; }
-    .warning { color: #d97706; }
-    .safe { color: #059669; }
-    .blue { color: #2563eb; }
+    .danger { color: var(--red); }
+    .warning { color: var(--yellow); }
+    .safe { color: var(--teal); }
+    .blue { color: var(--blue); }
+    .purple { color: var(--purple); }
 
     .main-grid {
       display: grid;
-      grid-template-columns: 1.45fr 0.95fr;
+      grid-template-columns: 58% 42%;
       gap: 24px;
+      align-items: start;
     }
-
     .panel {
-      background: white;
-      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.90), rgba(255,255,255,.82));
+      backdrop-filter: blur(12px);
+      border-radius: 26px;
       padding: 24px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-      border: 1px solid #e5e7eb;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(255,255,255,.72);
     }
-
     .panel h2 {
       margin-top: 0;
       margin-bottom: 18px;
-      font-size: 22px;
+      font-size: 24px;
+      letter-spacing:-.25px;
     }
-
     .input-grid {
       display: grid;
-      grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
+      grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 1fr 1fr;
       gap: 14px;
       margin-bottom: 14px;
     }
-
     .input-group label {
       display: block;
-      margin-bottom: 6px;
-      font-size: 15px;
-      font-weight: bold;
+      margin-bottom: 7px;
+      font-size: 14px;
+      font-weight: 700;
+      color:#334155;
     }
-
-    .input-group input {
+    .input-group input,
+    .input-group select {
       width: 100%;
-      padding: 13px;
-      border: 1px solid #cfd6dd;
-      border-radius: 10px;
-      font-size: 16px;
+      padding: 13px 14px;
+      border: 1px solid #d6deea;
+      border-radius: 14px;
+      font-size: 15px;
+      background: rgba(255,255,255,.92);
+      color:#1e293b;
+      outline:none;
+      transition:border-color .18s ease, box-shadow .18s ease, transform .12s ease;
     }
-
+    .input-group input:focus,
+    .input-group select:focus{
+      border-color:#93c5fd;
+      box-shadow:0 0 0 4px rgba(147,197,253,.25);
+    }
     .small-note-box {
       margin: 10px 0 14px 0;
-      padding: 14px 16px;
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
+      padding: 16px 18px;
+      background: linear-gradient(180deg, #f8fbff, #f2f8ff);
+      border: 1px solid #dbeafe;
+      border-radius: 16px;
       font-size: 14px;
-      color: #555;
-      line-height: 1.7;
+      color: #475569;
+      line-height: 1.75;
     }
-
+    .editing-note {
+      display: none;
+      margin-top: 10px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
     .btn-row {
       display: flex;
       gap: 10px;
-      margin-top: 16px;
+      margin-top: 6px;
       margin-bottom: 18px;
       flex-wrap: nowrap;
       align-items: center;
     }
-
     button {
       border: none;
-      border-radius: 10px;
-      padding: 15px 20px;
-      font-size: 16px;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-size: 15px;
       cursor: pointer;
-      font-weight: bold;
+      font-weight: 800;
       white-space: nowrap;
       flex-shrink: 0;
+      transition: transform .18s ease, opacity .18s ease, box-shadow .18s ease;
+      box-shadow: 0 10px 18px rgba(15,23,42,.08);
     }
-
-    .btn-add {
-      background: #2563eb;
-      color: white;
+    button:hover { transform: translateY(-2px); }
+    .btn-add { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; }
+    .btn-report { background: linear-gradient(135deg, #059669, #047857); color: white; }
+    .btn-csv { background: linear-gradient(135deg, #f97316, #ea580c); color: white; }
+    .btn-copy { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
+    .btn-reset { background: linear-gradient(135deg, #f8fafc, #e5e7eb); color: #222; }
+    .btn-sample { background: linear-gradient(135deg, #0f766e, #115e59); color: white; }
+    .btn-edit { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 8px 12px; font-size: 13px; border-radius: 10px; box-shadow:none; }
+    .delete-btn { background: linear-gradient(135deg, #f87171, #ef4444); color: white; padding: 8px 12px; font-size: 13px; border-radius: 10px; box-shadow:none; }
+    .sort-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #475569;
+      font-weight:700;
     }
-
-    .btn-add:hover {
-      background: #1d4ed8;
+    .sort-box select {
+      padding: 10px 12px;
+      border: 1px solid #d7e0ed;
+      border-radius: 12px;
+      font-size: 14px;
+      background:rgba(255,255,255,.92);
     }
-
-    .btn-report {
-      background: #059669;
-      color: white;
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 18px;
+      border:1px solid #e5edf7;
+      background:rgba(255,255,255,.74);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
     }
-
-    .btn-report:hover {
-      background: #047857;
-    }
-
-    .btn-csv {
-      background: #ea580c;
-      color: white;
-    }
-
-    .btn-csv:hover {
-      background: #c2410c;
-    }
-
-    .btn-copy {
-      background: #7c3aed;
-      color: white;
-    }
-
-    .btn-copy:hover {
-      background: #6d28d9;
-    }
-
-    .btn-reset {
-      background: #e5e7eb;
-      color: #222;
-    }
-
-    .btn-reset:hover {
-      background: #d1d5db;
-    }
-
     table {
       width: 100%;
+      min-width: 1180px;
       border-collapse: collapse;
-      margin-top: 8px;
+      margin-top: 0;
+    }
+    th, td {
+      border-bottom: 1px solid #edf2f7;
+      padding: 13px 8px;
+      text-align: center;
+      font-size: 14px;
+      vertical-align: middle;
+      word-break: keep-all;
+    }
+    th {
+      background: linear-gradient(180deg, #f8fbff, #eef4fb);
+      font-weight: 800;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      color:#334155;
+    }
+    tbody tr:nth-child(even){ background: rgba(248,250,252,.75); }
+    tbody tr:hover{ background:#eff6ff; }
+    .status-badge,
+    .trend-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 92px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing:.1px;
+      white-space: nowrap;
+      word-break: keep-all;
+    }
+    .badge-danger { background: #fee2e2; color: #b91c1c; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-safe { background: #d1fae5; color: #065f46; }
+    .trend-up { background: #dbeafe; color: #1d4ed8; }
+    .trend-down { background: #f3e8ff; color: #7e22ce; }
+    .trend-flat { background: #e2e8f0; color: #475569; }
+
+    .report-box {
+      min-height: 300px;
+      background: linear-gradient(180deg, #fcfdff, #f7faff);
+      border: 1px solid #dbe7f3;
+      border-radius: 18px;
+      padding: 18px;
+      line-height: 1.9;
+      white-space: pre-line;
+      font-size: 15px;
+      margin-bottom: 16px;
+      color:#243244;
+    }
+    .chart-box {
+      background: linear-gradient(180deg, #fcfdff, #f7fbff);
+      border: 1px solid #e0eaf5;
+      border-radius: 18px;
+      padding: 18px;
+    }
+    .chart-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      color: #334155;
+    }
+    .chart-empty {
+      color: #777;
+      font-size: 14px;
+    }
+    .chart-item {
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom:1px dashed #e6edf6;
+    }
+    .chart-item:last-child { margin-bottom: 0; padding-bottom:0; border-bottom:none; }
+    .chart-label-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: #475569;
+      font-weight:700;
+    }
+    .chart-label-name {
+      font-weight: 800;
+      color: #1e293b;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .chart-bar-group { display: grid; gap: 7px; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 50px;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color:#475569;
+      font-weight:700;
+    }
+    .bar-track {
+      width: 100%;
+      height: 12px;
+      background: #e8edf3;
+      border-radius: 999px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 2px rgba(15,23,42,.05);
+    }
+    .bar-fill { height: 100%; border-radius: 999px; }
+    .bar-predicted { background: linear-gradient(90deg, #60a5fa, #2563eb); }
+    .bar-stock { background: linear-gradient(90deg, #34d399, #059669); }
+    .bar-order { background: linear-gradient(90deg, #fb923c, #ea580c); }
+
+    .footer-note{
+      margin-top:18px;
+      color:#64748b;
+      font-size:13px;
+      text-align:right;
+      font-weight:600;
+    }
+    .empty-text { color: #777; }
+
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 14px;
     }
 
     th, td {
-      border-bottom: 1px solid #e5e7eb;
-      padding: 12px 8px;
-      text-align: center;
-      font-size: 14px;
-    }
-
-    th {
-      background: #f9fafb;
-      font-weight: bold;
+      word-break: keep-all;
     }
 
     .status-badge {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: bold;
-    }
-
-    .badge-danger {
-      background: #fee2e2;
-      color: #b91c1c;
-    }
-
-    .badge-warning {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .badge-safe {
-      background: #d1fae5;
-      color: #065f46;
-    }
-
-    .report-box {
-      min-height: 260px;
-      background: #f9fafb;
-      border: 1px solid #dbe2ea;
-      border-radius: 12px;
-      padding: 18px;
-      line-height: 1.8;
-      white-space: pre-line;
-      font-size: 15px;
-    }
-
-    .empty-text {
-      color: #777;
-    }
-
-    .delete-btn {
-      background: #ef4444;
-      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 92px;
       padding: 8px 12px;
+      border-radius: 999px;
       font-size: 13px;
-      border-radius: 8px;
+      font-weight: 700;
+      white-space: nowrap;
+      word-break: keep-all;
+      line-height: 1.2;
     }
 
-    .delete-btn:hover {
-      background: #dc2626;
+    .mobile-card-label {
+      display: none;
     }
+
 
     @media (max-width: 1450px) {
+      .btn-row { flex-wrap: wrap; }
+    }
+    @media (max-width: 1300px) {
+      .summary-cards { grid-template-columns: repeat(3, 1fr); }
+      .input-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .top-layout { grid-template-columns: 1fr; }
+      .logo-side {
+        justify-content: flex-start;
+        padding-left: 10px;
+        min-height: auto;
+      }
+      .header { min-height: auto; }
+    }
+    @media (max-width: 768px) {
       .container {
-        width: 95%;
+        width: min(100%, calc(100% - 20px));
+        margin: 12px auto 24px;
+      }
+      .top-layout { gap: 14px; margin-bottom: 16px; }
+      .logo-side {
+        justify-content: center;
+        padding-top: 0;
+        padding-left: 0;
+      }
+      .top-logo { width: 132px; }
+      .header {
+        padding: 22px 18px 20px;
+        border-radius: 20px;
+      }
+      .header-topline {
+        font-size: 12px;
+        padding: 7px 11px;
+        margin-bottom: 12px;
+      }
+      .header h1 {
+        font-size: 23px;
+        line-height: 1.35;
+      }
+      .header p, .date-box {
+        font-size: 14px;
+        line-height: 1.65;
+      }
+      .header-meta { gap: 8px; }
+      .meta-chip {
+        font-size: 12px;
+        padding: 7px 10px;
+      }
+      .summary-cards { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .card { padding: 16px; border-radius: 18px; }
+      .card-title { font-size: 13px; }
+      .card-value { font-size: 22px; }
+      .panel {
+        padding: 16px;
+        border-radius: 18px;
+      }
+      .panel h2 { font-size: 19px; }
+      .input-grid { grid-template-columns: 1fr; }
+      .btn-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .btn-row button {
+        width: 100%;
+        min-width: 0;
+        padding: 13px 12px;
+        font-size: 14px;
+      }
+      .sort-box {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .sort-box select { width: 100%; }
+      .table-wrap { border-radius: 14px; }
+      table { min-width: 900px; }
+      th, td {
+        font-size: 13px;
+        padding: 11px 7px;
+      }
+      .status-badge,
+      .trend-badge {
+        min-width: 84px;
+        font-size: 11px;
+        padding: 7px 10px;
+      }
+      .chart-box,
+      .report-box { border-radius: 16px; }
+      .bar-row { grid-template-columns: 58px 1fr 36px; gap: 6px; }
+      .chart-label-row { font-size: 12px; }
+      .footer-note {
+        text-align: left;
+        font-size: 12px;
+      }
+    }
+    @media (max-width: 480px) {
+      .container {
+        width: min(100%, calc(100% - 14px));
+        margin: 8px auto 18px;
+      }
+      .summary-cards { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .card { padding: 14px; }
+      .card-value { font-size: 20px; }
+      .header h1 { font-size: 21px; }
+      .btn-row { grid-template-columns: 1fr; }
+      .panel { padding: 14px; }
+      table { min-width: 860px; }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        width: 100%;
+        padding: 12px;
+        margin: 0 auto;
+      }
+
+      .top-layout {
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+
+      .logo-side {
+        padding-left: 0;
+        justify-content: center;
+      }
+
+      .top-logo {
+        width: 150px;
+        margin-left: 0;
+      }
+
+      .header {
+        padding: 22px 18px;
+        border-radius: 16px;
+      }
+
+      .header h1 {
+        font-size: 24px;
+        line-height: 1.4;
+        word-break: keep-all;
+      }
+
+      .header p,
+      .date-box {
+        font-size: 14px;
+        line-height: 1.7;
+        word-break: keep-all;
+      }
+
+      .summary-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .card {
+        padding: 16px;
+        border-radius: 14px;
+      }
+
+      .card-title {
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+
+      .card-value {
+        font-size: 24px;
+      }
+
+      .panel {
+        padding: 16px;
+        border-radius: 14px;
+      }
+
+      .panel h2 {
+        font-size: 18px;
+        margin-bottom: 14px;
+      }
+
+      .input-grid {
+        gap: 10px;
+      }
+
+      .input-group label {
+        font-size: 14px;
+      }
+
+      .input-group input,
+      .input-group select {
+        padding: 12px;
+        font-size: 16px;
+      }
+
+      .small-note-box,
+      .report-box {
+        font-size: 14px;
       }
 
       .btn-row {
-        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      button {
+        width: 100%;
+        padding: 13px 14px;
+        font-size: 15px;
+      }
+
+      .table-wrap {
+        overflow-x: visible;
+      }
+
+      .table-wrap table,
+      .table-wrap thead,
+      .table-wrap tbody,
+      .table-wrap th,
+      .table-wrap td,
+      .table-wrap tr {
+        display: block;
+        width: 100%;
+      }
+
+      .table-wrap thead {
+        display: none;
+      }
+
+      .table-wrap tbody {
+        display: block;
+      }
+
+      .table-wrap tr {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 14px;
+        margin-bottom: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      }
+
+      .table-wrap td {
+        border: none;
+        border-bottom: 1px solid #f1f5f9;
+        text-align: left;
+        padding: 10px 0;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .table-wrap td:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      .mobile-card-label {
+        display: inline-block;
+        min-width: 92px;
+        color: #64748b;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      .table-wrap td .cell-value {
+        text-align: right;
+        flex: 1;
+        word-break: keep-all;
+      }
+
+      .table-wrap td .delete-btn,
+      .table-wrap td .edit-btn {
+        width: auto;
       }
     }
 
-    @media (max-width: 1200px) {
-      .summary-cards {
-        grid-template-columns: repeat(2, 1fr);
+  
+    @media (min-width: 1201px) {
+      .main-grid {
+        grid-template-columns: 57% 43%;
+        align-items: stretch;
+        gap: 22px;
       }
 
+      .main-grid > .panel:first-child,
+      .main-grid > .panel:last-child {
+        min-width: 0;
+        max-width: none;
+      }
+
+      .main-grid > .panel:last-child {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .main-grid > .panel:last-child .report-box {
+        min-height: 310px;
+      }
+
+      .summary-cards {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+
+      .btn-row {
+        justify-content: flex-start;
+      }
+    }
+
+
+    .table-wrap {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-gutter: stable;
+    }
+
+    .table-wrap table {
+      table-layout: auto;
+    }
+
+    @media (min-width: 1201px) {
+      .table-wrap {
+        width: 100%;
+      }
+
+      th, td {
+        padding: 12px 6px;
+        font-size: 13px;
+      }
+
+      .delete-btn, .edit-btn {
+        padding: 8px 10px;
+      }
+    }
+
+
+    .main-grid > .panel:last-child {
+        position: sticky;
+        top: 20px;
+        align-self: start;
+      }
+
+      .main-grid > .panel:last-child .report-box {
+        min-height: 320px;
+        max-height: 420px;
+        overflow-y: auto;
+      }
+    }
+
+
+    .cell-value {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+
+    @media (max-width: 900px) {
       .main-grid {
         grid-template-columns: 1fr;
       }
 
-      .input-grid {
-        grid-template-columns: 1fr;
+      .summary-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .top-layout {
         grid-template-columns: 1fr;
       }
 
-      .logo-side {
-        justify-content: flex-start;
-        padding-left: 10px;
-        min-height: auto;
-      }
-
-      .header {
-        min-height: auto;
+      .input-grid {
+        grid-template-columns: 1fr;
       }
     }
-  </style>
+
+    @media (min-width: 901px) {
+      .container {
+        width: min(1480px, 94vw);
+      }
+
+      .main-grid {
+        display: grid;
+        grid-template-columns: 58% 42%;
+        gap: 24px;
+        align-items: start;
+      }
+
+      .main-grid > .panel:first-child,
+      .main-grid > .panel:last-child {
+        min-width: 0;
+        max-width: none;
+      }
+
+      .main-grid > .panel:last-child {
+        position: sticky;
+        top: 18px;
+        align-self: start;
+      }
+
+      .main-grid > .panel:last-child .report-box {
+        min-height: 280px;
+        max-height: 340px;
+        overflow-y: auto;
+      }
+    }
+
+</style>
 </head>
 <body>
   <div class="container">
-
     <div class="top-layout">
       <div class="logo-side">
         <img src="LOGO3.png" alt="호서대학교 로고" class="top-logo">
       </div>
 
       <div class="header">
-        <h1>LLM기반 주간 재고 진단 및 발주 리스트 생성 기능</h1>
+        <div class="header-topline">발표용 업그레이드 데모 · 재고 진단 대시보드</div>
+        <h1>AI 기반 주간 재고 진단 및 발주 리스트 생성 기능</h1>
         <p>
           최근 3주 판매 데이터를 바탕으로 다음 주 예상 판매량을 계산하고,
-          이를 기준으로 발주 우선순위와 권장 발주 수량을 제안한다.
+          추세·안전재고·입고 소요일수를 함께 고려하여 발주 우선순위와 권장 발주 수량을 제안한다.
         </p>
+        <div class="header-meta">
+          <div class="meta-chip">가중 평균 예측</div>
+          <div class="meta-chip">추세 분석</div>
+          <div class="meta-chip">안전재고 반영</div>
+          <div class="meta-chip">자동 저장</div>
+        </div>
         <div class="date-box" id="todayDate"></div>
       </div>
     </div>
@@ -373,6 +926,10 @@
       <div class="card">
         <div class="card-title">발주 대상 상품 수</div>
         <div class="card-value blue" id="orderTargetCount">0</div>
+      </div>
+      <div class="card">
+        <div class="card-title">총 권장 발주 수량</div>
+        <div class="card-value purple" id="totalRecommendedOrder">0</div>
       </div>
     </div>
 
@@ -405,147 +962,277 @@
             <label for="currentStock">현재 재고량</label>
             <input type="number" id="currentStock" placeholder="예: 12">
           </div>
+
+          <div class="input-group">
+            <label for="safetyStock">안전재고</label>
+            <input type="number" id="safetyStock" placeholder="예: 5" value="5">
+          </div>
+
+          <div class="input-group">
+            <label for="leadTime">입고 소요일수</label>
+            <input type="number" id="leadTime" placeholder="예: 3" value="3">
+          </div>
         </div>
 
         <div class="small-note-box">
-          최근 3주 판매량의 평균을 기준으로 다음 주 예상 판매량을 계산한다.
-          이후 예상 판매량과 현재 재고량을 비교하여 발주 필요 여부와 권장 발주 수량을 산출한다.
+          예상 판매량은 최근 데이터에 더 높은 가중치를 주는 방식으로 계산한다.<br>
+          계산식: 3주 전 20% + 2주 전 30% + 1주 전 50%<br>
+          이후 추세, 안전재고, 입고 소요일수를 함께 고려하여 진단 결과와 권장 발주 수량을 산출한다.
         </div>
 
-        <div class="btn-row">
-          <button class="btn-add" onclick="addProduct()">상품 추가</button>
-          <button class="btn-report" onclick="generateReport()">AI 보고서 생성</button>
-          <button class="btn-csv" onclick="downloadCSV()">CSV 다운로드 📥</button>
-          <button class="btn-copy" onclick="copyReport()">보고서 복사 📋</button>
-          <button class="btn-reset" onclick="resetAll()">초기화</button>
+        <div class="editing-note" id="editingNote">현재 수정 모드입니다. 값을 바꾼 뒤 저장 버튼을 누르세요.</div>
+
+        <div class="control-row">
+          <div class="btn-row">
+            <button class="btn-add" id="saveBtn" onclick="addOrUpdateProduct()">상품 추가</button>
+            <button class="btn-report" onclick="generateReport()">AI 보고서 생성</button>
+            <button class="btn-csv" onclick="downloadCSV()">CSV 다운로드 📥</button>
+            <button class="btn-copy" onclick="copyReport()">보고서 복사 📋</button>
+            <button class="btn-sample" onclick="loadSampleData()">예시 데이터</button>
+            <button class="btn-reset" onclick="resetAll()">초기화</button>
+          </div>
+
+          <div class="sort-box">
+            <label for="sortOption">정렬 기준</label>
+            <select id="sortOption" onchange="applySortAndRender()">
+              <option value="priority">우선순위순</option>
+              <option value="name">상품명순</option>
+              <option value="predicted">예상 판매량순</option>
+              <option value="stock">현재 재고순</option>
+              <option value="order">권장 발주 수량순</option>
+            </select>
+          </div>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>우선순위</th>
-              <th>상품명</th>
-              <th>예상 판매량</th>
-              <th>현재 재고</th>
-              <th>진단 결과</th>
-              <th>권장 발주 수량</th>
-              <th>관리</th>
-            </tr>
-          </thead>
-          <tbody id="productTable">
-            <tr>
-              <td colspan="7" class="empty-text">아직 등록된 상품이 없습니다.</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-wrap"><table>
+            <thead>
+              <tr>
+                <th>우선순위</th>
+                <th>상품명</th>
+                <th>예상 판매량</th>
+                <th>현재 재고</th>
+                <th>추세</th>
+                <th>진단 결과</th>
+                <th>안전재고</th>
+                <th>입고일수</th>
+                <th>권장 발주 수량</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="productTable">
+              <tr>
+                <td colspan="10" class="empty-text">아직 등록된 상품이 없습니다.</td>
+              </tr>
+            </tbody>
+          </table></div>
+        </div>
       </div>
 
       <div class="panel">
         <h2>AI 분석 결과</h2>
         <div class="report-box" id="reportBox">아직 보고서가 생성되지 않았습니다.</div>
+
+        <div class="chart-box">
+          <div class="chart-title">상품별 재고 비교 시각화</div>
+          <div id="chartArea" class="chart-empty">상품을 등록하면 예상 판매량, 현재 재고, 권장 발주 수량이 표시됩니다.</div>
+        </div>
       </div>
     </div>
+    <div class="footer-note">발표 팁: 예시 데이터 → AI 보고서 생성 순서로 시연하면 기능 흐름이 깔끔하게 보인다.</div>
   </div>
 
   <script>
-    const products = [];
+    const STORAGE_KEY = 'inventory_ai_products_v2';
+    let products = [];
+    let editingIndex = null;
 
     function setTodayDate() {
       const today = new Date();
       const y = today.getFullYear();
       const m = String(today.getMonth() + 1).padStart(2, '0');
       const d = String(today.getDate()).padStart(2, '0');
-      document.getElementById("todayDate").innerText = `기준일: ${y}-${m}-${d}`;
+      document.getElementById('todayDate').innerText = `기준일: ${y}-${m}-${d}`;
     }
 
     function predictSales(w1, w2, w3) {
-      return Math.round((w1 + w2 + w3) / 3);
+      return Math.round(w1 * 0.2 + w2 * 0.3 + w3 * 0.5);
     }
 
-    function analyzeStock(predictedSales, stock) {
-      let status = "";
-      let badge = "";
-      let recommendedOrder = 0;
-      let priorityScore = 0;
+    function getTrendInfo(w1, w2, w3) {
+      if (w1 < w2 && w2 < w3) {
+        return { trendText: '상승 추세', trendClass: 'trend-up', trendScore: 1 };
+      }
+      if (w1 > w2 && w2 > w3) {
+        return { trendText: '감소 추세', trendClass: 'trend-down', trendScore: -1 };
+      }
+      return { trendText: '보합 추세', trendClass: 'trend-flat', trendScore: 0 };
+    }
 
-      if (stock < predictedSales * 0.5) {
-        status = "발주 필요";
-        badge = "badge-danger";
-        recommendedOrder = Math.max(predictedSales - stock, 0) + 5;
-        priorityScore = 3;
-      } else if (stock < predictedSales) {
-        status = "발주 검토";
-        badge = "badge-warning";
-        recommendedOrder = Math.max(predictedSales - stock, 0);
-        priorityScore = 2;
+    function analyzeStock(predictedSales, stock, safetyStock, leadTime, trendScore) {
+      const targetStock = predictedSales + safetyStock;
+      const shortage = Math.max(targetStock - stock, 0);
+      const leadTimeScore = leadTime >= 5 ? 1 : 0;
+      const totalRiskScore = trendScore + leadTimeScore;
+
+      let status = '';
+      let badge = '';
+      let priorityScore = 0;
+      let recommendedOrder = 0;
+
+      if (stock < predictedSales * 0.5 || stock + safetyStock < predictedSales) {
+        status = '발주 필요';
+        badge = 'badge-danger';
+        recommendedOrder = shortage + (totalRiskScore > 0 ? 3 : 0);
+        priorityScore = 3 + totalRiskScore;
+      } else if (stock < targetStock) {
+        status = '발주 검토';
+        badge = 'badge-warning';
+        recommendedOrder = shortage;
+        priorityScore = 2 + (leadTime >= 5 ? 1 : 0);
       } else {
-        status = "재고 안정";
-        badge = "badge-safe";
+        status = '재고 안정';
+        badge = 'badge-safe';
         recommendedOrder = 0;
         priorityScore = 1;
       }
 
-      return { status, badge, recommendedOrder, priorityScore };
+      recommendedOrder = Math.max(recommendedOrder, 0);
+      return { status, badge, recommendedOrder, priorityScore, targetStock };
     }
 
-    function sortProducts() {
-      products.sort((a, b) => {
-        if (b.priorityScore !== a.priorityScore) {
-          return b.priorityScore - a.priorityScore;
-        }
-        return b.recommendedOrder - a.recommendedOrder;
-      });
-    }
+    function buildProductData(productName, w1, w2, w3, currentStock, safetyStock, leadTime) {
+      const predictedSales = predictSales(w1, w2, w3);
+      const trend = getTrendInfo(w1, w2, w3);
+      const result = analyzeStock(predictedSales, currentStock, safetyStock, leadTime, trend.trendScore);
 
-    function addProduct() {
-      const productName = document.getElementById("productName").value.trim();
-      const week1 = parseInt(document.getElementById("week1").value);
-      const week2 = parseInt(document.getElementById("week2").value);
-      const week3 = parseInt(document.getElementById("week3").value);
-      const currentStock = parseInt(document.getElementById("currentStock").value);
-
-      if (!productName || isNaN(week1) || isNaN(week2) || isNaN(week3) || isNaN(currentStock)) {
-        alert("상품명, 최근 3주 판매량, 현재 재고량을 모두 입력하세요.");
-        return;
-      }
-
-      if (week1 < 0 || week2 < 0 || week3 < 0 || currentStock < 0) {
-        alert("판매량과 재고량은 0 이상이어야 합니다.");
-        return;
-      }
-
-      const predictedSales = predictSales(week1, week2, week3);
-      const result = analyzeStock(predictedSales, currentStock);
-
-      products.push({
+      return {
         productName,
-        week1,
-        week2,
-        week3,
-        predictedSales,
+        week1: w1,
+        week2: w2,
+        week3: w3,
         currentStock,
+        safetyStock,
+        leadTime,
+        predictedSales,
+        trendText: trend.trendText,
+        trendClass: trend.trendClass,
+        trendScore: trend.trendScore,
         status: result.status,
         badge: result.badge,
         recommendedOrder: result.recommendedOrder,
-        priorityScore: result.priorityScore
+        priorityScore: result.priorityScore,
+        targetStock: result.targetStock
+      };
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+    }
+
+    function loadFromLocalStorage() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          products = parsed;
+        }
+      } catch (error) {
+        console.error('저장 데이터 불러오기 실패:', error);
+      }
+    }
+
+    function sortProducts() {
+      const sortOption = document.getElementById('sortOption').value;
+
+      products.sort((a, b) => {
+        if (sortOption === 'name') return a.productName.localeCompare(b.productName, 'ko');
+        if (sortOption === 'predicted') return b.predictedSales - a.predictedSales;
+        if (sortOption === 'stock') return b.currentStock - a.currentStock;
+        if (sortOption === 'order') return b.recommendedOrder - a.recommendedOrder;
+
+        if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
+        if (b.recommendedOrder !== a.recommendedOrder) return b.recommendedOrder - a.recommendedOrder;
+        return a.productName.localeCompare(b.productName, 'ko');
       });
+    }
 
-      sortProducts();
-      renderTable();
-      updateSummary();
+    function clearInputs() {
+      document.getElementById('productName').value = '';
+      document.getElementById('week1').value = '';
+      document.getElementById('week2').value = '';
+      document.getElementById('week3').value = '';
+      document.getElementById('currentStock').value = '';
+      document.getElementById('safetyStock').value = 5;
+      document.getElementById('leadTime').value = 3;
+    }
 
-      document.getElementById("productName").value = "";
-      document.getElementById("week1").value = "";
-      document.getElementById("week2").value = "";
-      document.getElementById("week3").value = "";
-      document.getElementById("currentStock").value = "";
+    function exitEditMode() {
+      editingIndex = null;
+      document.getElementById('saveBtn').innerText = '상품 추가';
+      document.getElementById('editingNote').style.display = 'none';
+    }
+
+    function validateInputs() {
+      const productName = document.getElementById('productName').value.trim();
+      const week1 = parseInt(document.getElementById('week1').value);
+      const week2 = parseInt(document.getElementById('week2').value);
+      const week3 = parseInt(document.getElementById('week3').value);
+      const currentStock = parseInt(document.getElementById('currentStock').value);
+      const safetyStock = parseInt(document.getElementById('safetyStock').value);
+      const leadTime = parseInt(document.getElementById('leadTime').value);
+
+      if (!productName || [week1, week2, week3, currentStock, safetyStock, leadTime].some(v => isNaN(v))) {
+        alert('상품명, 최근 3주 판매량, 현재 재고량, 안전재고, 입고 소요일수를 모두 입력하세요.');
+        return null;
+      }
+
+      if ([week1, week2, week3, currentStock, safetyStock, leadTime].some(v => v < 0)) {
+        alert('모든 수치는 0 이상이어야 합니다.');
+        return null;
+      }
+
+      return { productName, week1, week2, week3, currentStock, safetyStock, leadTime };
+    }
+
+    function addOrUpdateProduct() {
+      const values = validateInputs();
+      if (!values) return;
+
+      const { productName, week1, week2, week3, currentStock, safetyStock, leadTime } = values;
+      const duplicateIndex = products.findIndex((item, index) => item.productName === productName && index !== editingIndex);
+
+      if (duplicateIndex !== -1) {
+        alert('이미 등록된 상품명입니다. 같은 상품은 수정 기능을 사용하세요.');
+        return;
+      }
+
+      const productData = buildProductData(productName, week1, week2, week3, currentStock, safetyStock, leadTime);
+
+      if (editingIndex === null) {
+        products.push(productData);
+      } else {
+        products[editingIndex] = productData;
+      }
+
+      saveToLocalStorage();
+      exitEditMode();
+      clearInputs();
+      applySortAndRender();
+    }
+
+    
+    function resetTableScroll() {
+      const wrap = document.querySelector('.table-wrap');
+      if (wrap) wrap.scrollLeft = 0;
     }
 
     function renderTable() {
       const table = document.getElementById("productTable");
 
       if (products.length === 0) {
-        table.innerHTML = `<tr><td colspan="7" class="empty-text">아직 등록된 상품이 없습니다.</td></tr>`;
+        table.innerHTML = `<tr><td colspan="10" class="empty-text">아직 등록된 상품이 없습니다.</td></tr>`;
         return;
       }
 
@@ -554,116 +1241,146 @@
       products.forEach((item, index) => {
         table.innerHTML += `
           <tr>
-            <td>${index + 1}</td>
-            <td>${item.productName}</td>
-            <td>${item.predictedSales}</td>
-            <td>${item.currentStock}</td>
-            <td><span class="status-badge ${item.badge}">${item.status}</span></td>
-            <td>${item.recommendedOrder}</td>
-            <td><button class="delete-btn" onclick="deleteProduct(${index})">삭제</button></td>
+            <td><span class="mobile-card-label">우선순위</span><span class="cell-value">${index + 1}</span></td>
+            <td><span class="mobile-card-label">상품명</span><span class="cell-value">${item.productName}</span></td>
+            <td><span class="mobile-card-label">예상 판매량</span><span class="cell-value">${item.predictedSales}</span></td>
+            <td><span class="mobile-card-label">현재 재고</span><span class="cell-value">${item.currentStock}</span></td>
+            <td><span class="mobile-card-label">추세</span><span class="cell-value">${item.trendText || '-'}</span></td>
+            <td><span class="mobile-card-label">진단 결과</span><span class="cell-value"><span class="status-badge ${item.badge}">${item.status}</span></span></td>
+            <td><span class="mobile-card-label">안전재고</span><span class="cell-value">${item.safetyStock}</span></td>
+            <td><span class="mobile-card-label">입고일수</span><span class="cell-value">${item.leadTime}</span></td>
+            <td><span class="mobile-card-label">권장 발주 수량</span><span class="cell-value">${item.recommendedOrder}</span></td>
+            <td>
+              <span class="mobile-card-label">관리</span>
+              <span class="cell-value">
+                <button class="edit-btn" onclick="editProduct(${index})">수정</button>
+                <button class="delete-btn" onclick="deleteProduct(${index})">삭제</button>
+              </span>
+            </td>
           </tr>
         `;
       });
+      resetTableScroll();
+    }
+
+    function editProduct(index) {
+      const item = products[index];
+      if (!item) return;
+
+      document.getElementById('productName').value = item.productName;
+      document.getElementById('week1').value = item.week1;
+      document.getElementById('week2').value = item.week2;
+      document.getElementById('week3').value = item.week3;
+      document.getElementById('currentStock').value = item.currentStock;
+      document.getElementById('safetyStock').value = item.safetyStock;
+      document.getElementById('leadTime').value = item.leadTime;
+
+      editingIndex = index;
+      document.getElementById('saveBtn').innerText = '수정 저장';
+      document.getElementById('editingNote').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function deleteProduct(index) {
       products.splice(index, 1);
-      sortProducts();
-      renderTable();
-      updateSummary();
-      document.getElementById("reportBox").innerText = "상품 목록이 변경되었습니다. 보고서를 다시 생성하세요.";
+      saveToLocalStorage();
+      if (editingIndex === index) {
+        exitEditMode();
+        clearInputs();
+      }
+      applySortAndRender();
+      document.getElementById('reportBox').innerText = '상품 목록이 변경되었습니다. 보고서를 다시 생성하세요.';
     }
 
     function updateSummary() {
       const total = products.length;
-      const danger = products.filter(item => item.status === "발주 필요").length;
-      const warning = products.filter(item => item.status === "발주 검토").length;
-      const safe = products.filter(item => item.status === "재고 안정").length;
-      const orderTargetCount = products.filter(item => item.status === "발주 필요" || item.status === "발주 검토").length;
+      const danger = products.filter(item => item.status === '발주 필요').length;
+      const warning = products.filter(item => item.status === '발주 검토').length;
+      const safe = products.filter(item => item.status === '재고 안정').length;
+      const orderTargetCount = products.filter(item => item.recommendedOrder > 0).length;
+      const totalRecommendedOrder = products.reduce((sum, item) => sum + item.recommendedOrder, 0);
 
-      document.getElementById("totalCount").innerText = total;
-      document.getElementById("dangerCount").innerText = danger;
-      document.getElementById("warningCount").innerText = warning;
-      document.getElementById("safeCount").innerText = safe;
-      document.getElementById("orderTargetCount").innerText = orderTargetCount;
+      document.getElementById('totalCount').innerText = total;
+      document.getElementById('dangerCount').innerText = danger;
+      document.getElementById('warningCount').innerText = warning;
+      document.getElementById('safeCount').innerText = safe;
+      document.getElementById('orderTargetCount').innerText = orderTargetCount;
+      document.getElementById('totalRecommendedOrder').innerText = totalRecommendedOrder;
     }
 
     function generateReport() {
-      const reportBox = document.getElementById("reportBox");
-
+      const reportBox = document.getElementById('reportBox');
       if (products.length === 0) {
-        reportBox.innerText = "보고서를 생성하려면 먼저 상품을 등록하세요.";
+        reportBox.innerText = '보고서를 생성하려면 먼저 상품을 등록하세요.';
         return;
       }
 
-      const dangerItems = products.filter(item => item.status === "발주 필요");
-      const warningItems = products.filter(item => item.status === "발주 검토");
-      const safeItems = products.filter(item => item.status === "재고 안정");
-      const orderItems = products.filter(item => item.status === "발주 필요" || item.status === "발주 검토");
+      const dangerItems = products.filter(item => item.status === '발주 필요');
+      const warningItems = products.filter(item => item.status === '발주 검토');
+      const safeItems = products.filter(item => item.status === '재고 안정');
+      const orderItems = products.filter(item => item.recommendedOrder > 0);
+      const totalOrder = orderItems.reduce((sum, item) => sum + item.recommendedOrder, 0);
 
-      let report = "주간 재고 진단 및 발주 추천 보고서\n\n";
-      report += `최근 3주 판매 데이터를 바탕으로 다음 주 예상 판매량을 계산한 결과, 총 ${products.length}개 상품 중 발주 필요 ${dangerItems.length}개, 발주 검토 ${warningItems.length}개, 재고 안정 ${safeItems.length}개로 확인되었다.\n\n`;
+      let report = '주간 재고 진단 및 발주 추천 보고서\n\n';
+      report += `총 ${products.length}개 상품을 분석한 결과, 발주 필요 ${dangerItems.length}개, 발주 검토 ${warningItems.length}개, 재고 안정 ${safeItems.length}개로 확인되었다. 전체 권장 발주 수량은 ${totalOrder}개이다.\n\n`;
+      report += '이번 분석은 최근 3주 판매량에 가중치를 두어 예상 판매량을 계산하고, 판매 추세·안전재고·입고 소요일수를 함께 고려하여 산출하였다.\n\n';
 
       if (dangerItems.length > 0) {
-        report += "[즉시 발주 권장 상품]\n";
+        report += '[즉시 발주 권장 상품]\n';
         dangerItems.forEach((item, idx) => {
-          report += `${idx + 1}. ${item.productName}: 최근 3주 판매량(${item.week1}, ${item.week2}, ${item.week3})을 기준으로 다음 주 예상 판매량은 ${item.predictedSales}개이며, 현재 재고 ${item.currentStock}개로 부족 상태이므로 권장 발주 수량은 ${item.recommendedOrder}개이다.\n`;
+          let reason = `${item.trendText}`;
+          if (item.leadTime >= 5) reason += ', 입고 지연 가능성 높음';
+          report += `${idx + 1}. ${item.productName}: 최근 판매량(${item.week1}, ${item.week2}, ${item.week3})을 반영한 예상 판매량은 ${item.predictedSales}개이며, 현재 재고는 ${item.currentStock}개이다. ${reason} 상황을 고려할 때 권장 발주 수량은 ${item.recommendedOrder}개이다.\n`;
         });
-        report += "\n";
+        report += '\n';
       }
 
       if (warningItems.length > 0) {
-        report += "[발주 검토 상품]\n";
+        report += '[발주 검토 상품]\n';
         warningItems.forEach((item, idx) => {
-          report += `${idx + 1}. ${item.productName}: 다음 주 예상 판매량은 ${item.predictedSales}개이며, 현재 재고 ${item.currentStock}개로 재고가 충분하지 않아 추가 확인이 필요하다. 권장 발주 수량은 ${item.recommendedOrder}개이다.\n`;
+          report += `${idx + 1}. ${item.productName}: 예상 판매량 ${item.predictedSales}개 대비 현재 재고 ${item.currentStock}개로 안전재고 ${item.safetyStock}개를 충족하지 못할 가능성이 있다. ${item.trendText} 흐름을 참고하여 ${item.recommendedOrder}개 발주 여부를 검토할 필요가 있다.\n`;
         });
-        report += "\n";
+        report += '\n';
       }
 
       if (safeItems.length > 0) {
-        report += "[재고 안정 상품]\n";
+        report += '[재고 안정 상품]\n';
         safeItems.forEach((item, idx) => {
-          report += `${idx + 1}. ${item.productName}: 다음 주 예상 판매량 ${item.predictedSales}개 대비 현재 재고 ${item.currentStock}개로 비교적 안정적인 상태이다.\n`;
+          report += `${idx + 1}. ${item.productName}: 예상 판매량 ${item.predictedSales}개 대비 현재 재고 ${item.currentStock}개로 비교적 안정적인 상태이다. 현재는 추가 발주 없이 모니터링 중심 관리가 적절하다.\n`;
         });
-        report += "\n";
+        report += '\n';
       }
 
-      report += "[최종 발주안]\n";
+      report += '[최종 발주안]\n';
       if (orderItems.length > 0) {
         orderItems.forEach((item, idx) => {
-          if (item.status === "발주 필요") {
-            report += `${idx + 1}. ${item.productName}: ${item.recommendedOrder}개 발주\n`;
-          } else {
-            report += `${idx + 1}. ${item.productName}: ${item.recommendedOrder}개 추가 검토 후 발주\n`;
-          }
+          const orderText = item.status === '발주 필요' ? '즉시 발주 권장' : '추가 확인 후 발주';
+          report += `${idx + 1}. ${item.productName}: ${item.recommendedOrder}개 (${orderText})\n`;
         });
       } else {
-        report += "발주 대상 상품이 없습니다.\n";
+        report += '발주 대상 상품이 없습니다.\n';
       }
 
       reportBox.innerText = report;
     }
 
     function downloadCSV() {
-      const orderItems = products.filter(item => item.status === "발주 필요" || item.status === "발주 검토");
-
+      const orderItems = products.filter(item => item.recommendedOrder > 0);
       if (orderItems.length === 0) {
-        alert("다운로드할 발주 대상 상품이 없습니다.");
+        alert('다운로드할 발주 대상 상품이 없습니다.');
         return;
       }
 
-      let csv = "우선순위,상품명,예상판매량,현재재고,진단결과,권장발주수량\n";
-
+      let csv = '우선순위,상품명,예상판매량,현재재고,추세,진단결과,안전재고,입고소요일수,권장발주수량\n';
       orderItems.forEach((item, index) => {
-        csv += `${index + 1},${item.productName},${item.predictedSales},${item.currentStock},${item.status},${item.recommendedOrder}\n`;
+        csv += `${index + 1},${item.productName},${item.predictedSales},${item.currentStock},${item.trendText},${item.status},${item.safetyStock},${item.leadTime},${item.recommendedOrder}\n`;
       });
 
-      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-
+      const a = document.createElement('a');
       a.href = url;
-      a.download = "발주리스트.csv";
+      a.download = '발주리스트_업그레이드.csv';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -671,36 +1388,95 @@
     }
 
     function copyReport() {
-      const reportText = document.getElementById("reportBox").innerText;
-
-      if (reportText === "아직 보고서가 생성되지 않았습니다." || reportText.includes("보고서를 생성")) {
-        alert("먼저 보고서를 생성하세요.");
+      const reportText = document.getElementById('reportBox').innerText;
+      if (reportText === '아직 보고서가 생성되지 않았습니다.' || reportText.includes('보고서를 생성')) {
+        alert('먼저 보고서를 생성하세요.');
         return;
       }
 
       navigator.clipboard.writeText(reportText)
-        .then(() => {
-          alert("보고서가 복사되었습니다.");
-        })
-        .catch(() => {
-          alert("복사에 실패했습니다. 브라우저 권한을 확인하세요.");
-        });
+        .then(() => alert('보고서가 복사되었습니다.'))
+        .catch(() => alert('복사에 실패했습니다. 브라우저 권한을 확인하세요.'));
+    }
+
+    function renderChart() {
+      const chartArea = document.getElementById('chartArea');
+      if (products.length === 0) {
+        chartArea.className = 'chart-empty';
+        chartArea.innerText = '상품을 등록하면 예상 판매량, 현재 재고, 권장 발주 수량이 표시됩니다.';
+        return;
+      }
+
+      const maxValue = Math.max(...products.flatMap(item => [item.predictedSales, item.currentStock, item.recommendedOrder, item.targetStock]), 1);
+      const topItems = [...products].slice(0, 6);
+
+      chartArea.className = '';
+      chartArea.innerHTML = topItems.map(item => `
+        <div class="chart-item">
+          <div class="chart-label-row">
+            <div class="chart-label-name">${item.productName}</div>
+            <div>${item.status}</div>
+          </div>
+          <div class="chart-bar-group">
+            <div class="bar-row">
+              <div>예상판매</div>
+              <div class="bar-track"><div class="bar-fill bar-predicted" style="width:${(item.predictedSales / maxValue) * 100}%"></div></div>
+              <div>${item.predictedSales}</div>
+            </div>
+            <div class="bar-row">
+              <div>현재재고</div>
+              <div class="bar-track"><div class="bar-fill bar-stock" style="width:${(item.currentStock / maxValue) * 100}%"></div></div>
+              <div>${item.currentStock}</div>
+            </div>
+            <div class="bar-row">
+              <div>권장발주</div>
+              <div class="bar-track"><div class="bar-fill bar-order" style="width:${(item.recommendedOrder / maxValue) * 100}%"></div></div>
+              <div>${item.recommendedOrder}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
     }
 
     function resetAll() {
-      products.length = 0;
+      if (!confirm('모든 상품 데이터와 저장된 기록을 초기화할까요?')) return;
+      products = [];
+      localStorage.removeItem(STORAGE_KEY);
+      clearInputs();
+      exitEditMode();
+      applySortAndRender();
+      document.getElementById('reportBox').innerText = '아직 보고서가 생성되지 않았습니다.';
+    }
+
+    function loadSampleData() {
+      const sampleProducts = [
+        buildProductData('생수 2L', 30, 35, 40, 12, 5, 3),
+        buildProductData('컵라면', 18, 16, 14, 25, 5, 2),
+        buildProductData('과자 묶음', 22, 28, 34, 10, 7, 5),
+        buildProductData('캔커피', 14, 15, 15, 17, 4, 6)
+      ];
+      products = sampleProducts;
+      saveToLocalStorage();
+      exitEditMode();
+      clearInputs();
+      applySortAndRender();
+      document.getElementById('reportBox').innerText = '예시 데이터가 적용되었습니다. AI 보고서를 생성해 보세요.';
+    }
+
+    function applySortAndRender() {
+      sortProducts();
       renderTable();
       updateSummary();
-      document.getElementById("reportBox").innerText = "아직 보고서가 생성되지 않았습니다.";
-      document.getElementById("productName").value = "";
-      document.getElementById("week1").value = "";
-      document.getElementById("week2").value = "";
-      document.getElementById("week3").value = "";
-      document.getElementById("currentStock").value = "";
+      renderChart();
+      saveToLocalStorage();
     }
 
     setTodayDate();
+    products = [];
+    renderTable();
     updateSummary();
+    renderChart();
+    document.getElementById('reportBox').innerText = '아직 보고서가 생성되지 않았습니다.';
   </script>
 </body>
 </html>
